@@ -1,5 +1,6 @@
 add_library(euler_core
-    version.cpp)
+    version.cpp
+    eos.cpp)
 add_library(euler::core ALIAS euler_core)
 
 target_include_directories(euler_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
