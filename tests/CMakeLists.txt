@@ -12,7 +12,8 @@ list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
 
 add_executable(euler_tests
-    test_smoke.cpp)
+    test_smoke.cpp
+    test_eos.cpp)
 
 target_link_libraries(euler_tests PRIVATE
     euler::core
