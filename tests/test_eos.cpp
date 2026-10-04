@@ -40,7 +40,7 @@ TEST_CASE("Sod right state has the expected sound speed", "[eos]") {
 TEST_CASE("Sod left state has the expected flux", "[eos]") {
     const euler::Primitive left{1.0, 0.0, 1.0};
     const euler::IdealGas air{};
-    const euler::Flux left_f = euler::flux(left, air);
+    const euler::Flux left_f = euler::physical_flux(left, air);
     REQUIRE_THAT(left_f.mass, Catch::Matchers::WithinAbs(0.0, 1e-12));
     REQUIRE_THAT(left_f.momentum, Catch::Matchers::WithinRel(1.0, 1e-12));
     REQUIRE_THAT(left_f.energy, Catch::Matchers::WithinAbs(0.0, 1e-12));
@@ -49,7 +49,7 @@ TEST_CASE("Sod left state has the expected flux", "[eos]") {
 TEST_CASE("Sod right state has the expected flux", "[eos]") {
     const euler::Primitive right{0.125, 0.0, 0.1};
     const euler::IdealGas air{};
-    const euler::Flux right_f = euler::flux(right, air);
+    const euler::Flux right_f = euler::physical_flux(right, air);
     REQUIRE_THAT(right_f.mass, Catch::Matchers::WithinAbs(0.0, 1e-12));
     REQUIRE_THAT(right_f.momentum, Catch::Matchers::WithinRel(0.1, 1e-12));
     REQUIRE_THAT(right_f.energy, Catch::Matchers::WithinAbs(0.0, 1e-12));
@@ -70,7 +70,7 @@ TEST_CASE("Moving state converts to the expected conserved variables", "[eos]") 
 TEST_CASE("Moving state has the expected flux", "[eos]") {
     const euler::Primitive w{1.5, 2.0, 2.4};
     const euler::IdealGas air{};
-    const euler::Flux f = euler::flux(w, air);
+    const euler::Flux f = euler::physical_flux(w, air);
     REQUIRE_THAT(f.mass, Catch::Matchers::WithinRel(3.0, 1e-12));
     REQUIRE_THAT(f.momentum, Catch::Matchers::WithinRel(8.4, 1e-12));
     REQUIRE_THAT(f.energy, Catch::Matchers::WithinRel(22.8, 1e-12));

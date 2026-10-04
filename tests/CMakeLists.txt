@@ -13,7 +13,8 @@ include(Catch)
 
 add_executable(euler_tests
     test_smoke.cpp
-    test_eos.cpp)
+    test_eos.cpp
+    test_numerical_flux.cpp)
 
 target_link_libraries(euler_tests PRIVATE
     euler::core

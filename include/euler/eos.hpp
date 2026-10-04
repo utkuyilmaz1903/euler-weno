@@ -15,7 +15,8 @@ struct IdealGas {
 // Speed of sound, c = sqrt(gamma * p / rho).
 [[nodiscard]] double sound_speed(Primitive w, IdealGas gas) noexcept;
 
-// Physical flux F(U) = (rho*u, rho*u^2 + p, u*(E + p)).
-[[nodiscard]] Flux flux(Primitive w, IdealGas gas) noexcept;
+// Physical flux of a single state, F(U) = (rho*u, rho*u^2 + p, u*(E + p)).
+// For the flux through a face between two cells, see numerical_flux.hpp.
+[[nodiscard]] Flux physical_flux(Primitive w, IdealGas gas) noexcept;
 
 } // namespace euler

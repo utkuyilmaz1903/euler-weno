@@ -27,7 +27,7 @@ double sound_speed(Primitive w, IdealGas gas) noexcept {
     return std::sqrt(gas.gamma * w.p / w.rho);
 }
 
-Flux flux(Primitive w, IdealGas gas) noexcept {
+Flux physical_flux(Primitive w, IdealGas gas) noexcept {
     const double E = to_conserved(w, gas).E;
     return {
         .mass = w.rho * w.u,
