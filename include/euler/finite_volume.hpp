@@ -42,4 +42,10 @@ riemann_initial_state(Grid grid, Primitive left, Primitive right, double x_inter
 // the interior cells change from step to step. `u` is the full list, ghosts included.
 void apply_transmissive_boundaries(std::span<Conserved> u, Grid grid) noexcept;
 
+// Largest stable time step from the CFL condition:
+//   dt = cfl * dx / max_i (|u_i| + c_i),
+// where the maximum runs over the interior cells. `cfl` must be below 1.
+[[nodiscard]] double cfl_time_step(std::span<const Conserved> u, Grid grid, double cfl,
+                                   IdealGas gas) noexcept;
+
 } // namespace euler

@@ -3,6 +3,8 @@
 #include "euler/eos.hpp"
 #include "euler/state.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 
 namespace euler {
@@ -57,6 +59,21 @@ void apply_transmissive_boundaries(std::span<Conserved> u, Grid grid) noexcept {
         u[k] = u[first];
         u[u.size() - (1 + k)] = u[last];
     }
+}
+
+double cfl_time_step(std::span<const Conserved> u, Grid grid, double cfl, IdealGas gas) noexcept {
+    const std::size_t g = ghost_cells_per_side(grid.reconstruction);
+    const double dx = cell_width(grid);
+
+    // Fastest wave speed |u| + c over the interior cells (positions g .. u.size() - 1 - g).
+    double max_speed = 0.0;
+    for (std::size_t j = g; j < u.size() - g; ++j) {
+        const Primitive w = to_primitive(u[j], gas);
+        const double speed = std::abs(w.u) + sound_speed(w, gas);
+        max_speed = std::max(max_speed, speed);
+    }
+
+    return cfl * dx / max_speed;
 }
 
 } // namespace euler
