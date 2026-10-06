@@ -3,6 +3,8 @@
 #include "euler/eos.hpp"
 #include "euler/state.hpp"
 
+#include <cstddef>
+
 namespace euler {
 
 std::size_t ghost_cells_per_side(Reconstruction reconstruction) noexcept {
@@ -43,6 +45,18 @@ std::vector<Conserved> riemann_initial_state(Grid grid, Primitive left, Primitiv
         }
     }
     return u;
+}
+
+void apply_transmissive_boundaries(std::span<Conserved> u, Grid grid) noexcept {
+    const std::size_t g = ghost_cells_per_side(grid.reconstruction);
+
+    const std::size_t first = g;
+    const std::size_t last = u.size() - (1 + g);
+
+    for (std::size_t k = 0; k < g; ++k) {
+        u[k] = u[first];
+        u[u.size() - (1 + k)] = u[last];
+    }
 }
 
 } // namespace euler

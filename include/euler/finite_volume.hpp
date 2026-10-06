@@ -4,6 +4,7 @@
 #include "euler/state.hpp"
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 namespace euler {
@@ -35,5 +36,10 @@ struct Grid {
 //   [ ghost cells | n_cells interior cells | ghost cells ]
 [[nodiscard]] std::vector<Conserved>
 riemann_initial_state(Grid grid, Primitive left, Primitive right, double x_interface, IdealGas gas);
+
+// Transmissive (open-end) boundaries: every ghost cell gets a copy of the nearest interior
+// cell, so waves leave the tube without reflecting. Called before every time step, because
+// the interior cells change from step to step. `u` is the full list, ghosts included.
+void apply_transmissive_boundaries(std::span<Conserved> u, Grid grid) noexcept;
 
 } // namespace euler

@@ -23,8 +23,6 @@ TEST_CASE("Cell width is the tube length divided by the number of cells", "[fv]"
     REQUIRE_THAT(dx, Catch::Matchers::WithinRel(0.25, 1e-12));
 }
 
-// 4 cells on [0, 1] with one ghost per side: centres -0.125 | 0.125 0.375 0.625 0.875 | 1.125,
-// so positions 0-2 get the left state and positions 3-5 the right state.
 TEST_CASE("Sod initial state fills every cell, ghosts included", "[fv]") {
     const euler::Grid grid{4, 0.0, 1.0, euler::Reconstruction::first_order};
     const euler::Primitive left{1.0, 0.0, 1.0};
@@ -52,4 +50,41 @@ TEST_CASE("A WENO5 grid gets three ghost cells per side", "[fv]") {
     const std::vector<euler::Conserved> u =
         euler::riemann_initial_state(grid, left, right, 0.5, air);
     REQUIRE(u.size() == 10); // 4 interior cells + 2 * 3 ghosts
+}
+
+// The interior end cells are changed by hand, as a time step would; the ghosts must follow.
+TEST_CASE("Transmissive boundaries copy the end cells into the ghosts (first order)", "[fv]") {
+    const euler::Grid grid{4, 0.0, 1.0, euler::Reconstruction::first_order};
+    const euler::Primitive left{1.0, 0.0, 1.0};
+    const euler::Primitive right{0.125, 0.0, 0.1};
+    const euler::IdealGas air{};
+    std::vector<euler::Conserved> u = euler::riemann_initial_state(grid, left, right, 0.5, air);
+
+    u[1] = euler::Conserved{2.0, 0.0, 5.0};
+    u[4] = euler::Conserved{0.5, 0.0, 1.0};
+    euler::apply_transmissive_boundaries(u, grid);
+
+    REQUIRE_THAT(u[0].rho, Catch::Matchers::WithinRel(2.0, 1e-12));
+    REQUIRE_THAT(u[0].E, Catch::Matchers::WithinRel(5.0, 1e-12));
+    REQUIRE_THAT(u[5].rho, Catch::Matchers::WithinRel(0.5, 1e-12));
+    REQUIRE_THAT(u[5].E, Catch::Matchers::WithinRel(1.0, 1e-12));
+}
+
+TEST_CASE("Transmissive boundaries fill all three ghost layers (WENO5)", "[fv]") {
+    const euler::Grid grid{4, 0.0, 1.0, euler::Reconstruction::weno5};
+    const euler::Primitive left{1.0, 0.0, 1.0};
+    const euler::Primitive right{0.125, 0.0, 0.1};
+    const euler::IdealGas air{};
+    std::vector<euler::Conserved> u = euler::riemann_initial_state(grid, left, right, 0.5, air);
+
+    u[3] = euler::Conserved{2.0, 0.0, 5.0};
+    u[6] = euler::Conserved{0.5, 0.0, 1.0};
+    euler::apply_transmissive_boundaries(u, grid);
+
+    for (std::size_t k = 0; k < 3; ++k) {
+        REQUIRE_THAT(u[k].rho, Catch::Matchers::WithinRel(2.0, 1e-12));
+        REQUIRE_THAT(u[k].E, Catch::Matchers::WithinRel(5.0, 1e-12));
+        REQUIRE_THAT(u[9 - k].rho, Catch::Matchers::WithinRel(0.5, 1e-12));
+        REQUIRE_THAT(u[9 - k].E, Catch::Matchers::WithinRel(1.0, 1e-12));
+    }
 }
