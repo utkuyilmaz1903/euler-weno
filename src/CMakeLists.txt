@@ -1,6 +1,7 @@
 add_library(euler_core
     version.cpp
     eos.cpp
+    finite_volume.cpp
     numerical_flux.cpp)
 add_library(euler::core ALIAS euler_core)
 
