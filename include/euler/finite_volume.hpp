@@ -48,4 +48,13 @@ void apply_transmissive_boundaries(std::span<Conserved> u, Grid grid) noexcept;
 [[nodiscard]] double cfl_time_step(std::span<const Conserved> u, Grid grid, double cfl,
                                    IdealGas gas) noexcept;
 
+// Advances the cell values by one time step dt with the Rusanov flux:
+//   1. refill the ghost cells (transmissive boundaries),
+//   2. compute the flux through every face from the old cell values,
+//   3. update every interior cell:  U_i <- U_i - dt/dx * (F_{i+1/2} - F_{i-1/2}).
+// `face_flux` is scratch space with n_cells + 1 entries, allocated once by the caller so that
+// the time loop does not allocate. Face f lies between interior cells f - 1 and f.
+void advance(std::span<Conserved> u, std::span<Flux> face_flux, Grid grid, double dt,
+             IdealGas gas) noexcept;
+
 } // namespace euler

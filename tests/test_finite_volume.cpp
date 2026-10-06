@@ -90,7 +90,6 @@ TEST_CASE("Transmissive boundaries fill all three ghost layers (WENO5)", "[fv]")
     }
 }
 
-// Sod at rest: the fastest wave is the sound speed on the left, c = sqrt(1.4).
 TEST_CASE("CFL time step uses the fastest wave speed in the tube", "[fv]") {
     const euler::Grid grid{4, 0.0, 1.0, euler::Reconstruction::first_order};
     const euler::Primitive left{1.0, 0.0, 1.0};
@@ -111,10 +110,50 @@ TEST_CASE("CFL time step looks at every interior cell, including the last one", 
     const euler::IdealGas air{};
     std::vector<euler::Conserved> u = euler::riemann_initial_state(grid, left, right, 0.5, air);
 
-    // Layout: ghost 0 | interior 1 2 3 4 | ghost 5. Cell 4 moves at u = 2, so |u| + c = 2 +
-    // sqrt(1.4).
     u[4] = euler::to_conserved(euler::Primitive{1.0, 2.0, 1.0}, air);
 
     const double dt = euler::cfl_time_step(u, grid, 0.5, air);
     REQUIRE_THAT(dt, Catch::Matchers::WithinRel(0.5 * 0.25 / (2.0 + std::sqrt(1.4)), 1e-12));
+}
+
+// With every cell in the same moving state, all face fluxes are equal, so "out minus in"
+// is zero in every cell and one step must leave the cells unchanged.
+TEST_CASE("One time step leaves a uniform moving gas unchanged", "[fv]") {
+    const euler::Grid grid{10, 0.0, 1.0, euler::Reconstruction::first_order};
+    const euler::Primitive state{1.0, 0.5, 1.0}; // conserved: (1, 0.5, 2.625)
+    const euler::IdealGas air{};
+    std::vector<euler::Conserved> u = euler::riemann_initial_state(grid, state, state, 0.5, air);
+    std::vector<euler::Flux> face_flux(grid.n_cells + 1);
+
+    const double dt = euler::cfl_time_step(u, grid, 0.5, air);
+    euler::advance(u, face_flux, grid, dt, air);
+
+    const std::size_t g = euler::ghost_cells_per_side(grid.reconstruction);
+    for (std::size_t j = g; j < g + grid.n_cells; ++j) { // interior cells only
+        REQUIRE_THAT(u[j].rho, Catch::Matchers::WithinRel(1.0, 1e-12));
+        REQUIRE_THAT(u[j].mom, Catch::Matchers::WithinRel(0.5, 1e-12));
+        REQUIRE_THAT(u[j].E, Catch::Matchers::WithinRel(2.625, 1e-12));
+    }
+}
+
+// Every interior face moves mass from one cell to its neighbour, and the gas at both ends is
+// at rest, so the total mass in the tube must stay at the Sod value 1 * 0.5 + 0.125 * 0.5.
+TEST_CASE("One time step conserves the total mass of the Sod problem", "[fv]") {
+    const euler::Grid grid{10, 0.0, 1.0, euler::Reconstruction::first_order};
+    const euler::Primitive left{1.0, 0.0, 1.0};
+    const euler::Primitive right{0.125, 0.0, 0.1};
+    const euler::IdealGas air{};
+    std::vector<euler::Conserved> u = euler::riemann_initial_state(grid, left, right, 0.5, air);
+    std::vector<euler::Flux> face_flux(grid.n_cells + 1);
+
+    const double dt = euler::cfl_time_step(u, grid, 0.5, air);
+    euler::advance(u, face_flux, grid, dt, air);
+
+    const std::size_t g = euler::ghost_cells_per_side(grid.reconstruction);
+    const double dx = euler::cell_width(grid);
+    double mass = 0.0;
+    for (std::size_t j = g; j < g + grid.n_cells; ++j) { // interior cells only
+        mass += u[j].rho * dx;
+    }
+    REQUIRE_THAT(mass, Catch::Matchers::WithinRel(0.5625, 1e-12));
 }

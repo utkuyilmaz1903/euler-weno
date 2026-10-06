@@ -1,6 +1,7 @@
 #include "euler/finite_volume.hpp"
 
 #include "euler/eos.hpp"
+#include "euler/numerical_flux.hpp"
 #include "euler/state.hpp"
 
 #include <algorithm>
@@ -74,6 +75,28 @@ double cfl_time_step(std::span<const Conserved> u, Grid grid, double cfl, IdealG
     }
 
     return cfl * dx / max_speed;
+}
+
+void advance(std::span<Conserved> u, std::span<Flux> face_flux, Grid grid, double dt,
+             IdealGas gas) noexcept {
+    const std::size_t g = ghost_cells_per_side(grid.reconstruction);
+    const double dx = cell_width(grid);
+
+    apply_transmissive_boundaries(u, grid);
+
+    // Face f lies between interior cells f - 1 and f, i.e. list positions g + f - 1 and g + f.
+    for (std::size_t f = 0; f <= grid.n_cells; ++f) {
+        face_flux[f] = rusanov_flux(u[g + f - 1], u[g + f], gas);
+    }
+
+    // Interior cell i sits at list position g + i, between faces i (left) and i + 1 (right).
+    for (std::size_t i = 0; i < grid.n_cells; ++i) {
+        const Flux left = face_flux[i];
+        const Flux right = face_flux[i + 1];
+        u[g + i].rho -= dt / dx * (right.mass - left.mass);
+        u[g + i].mom -= dt / dx * (right.momentum - left.momentum);
+        u[g + i].E -= dt / dx * (right.energy - left.energy);
+    }
 }
 
 } // namespace euler
