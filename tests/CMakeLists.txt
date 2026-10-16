@@ -15,7 +15,8 @@ add_executable(euler_tests
     test_smoke.cpp
     test_eos.cpp
     test_numerical_flux.cpp
-    test_finite_volume.cpp)
+    test_finite_volume.cpp
+    test_exact_riemann.cpp)
 
 target_link_libraries(euler_tests PRIVATE
     euler::core
